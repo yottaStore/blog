@@ -32,4 +32,8 @@ my comfort zone. I'm also glad I stumbled upon the fantastic book,
 [Designing Data-Intensive Applications](https://www.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/), 
 which greatly helped me in finding a solution.
 
-# The first iteration: Dynamo with Postgres
+# The first iteration: DynamoDB with Postgres
+
+# The second iteration: Dynamo in Golang
+
+# The Rust Renaissance
