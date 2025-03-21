@@ -86,7 +86,6 @@ system's file system overhead, I had to use low-level Linux system calls like `f
 (for bypassing the kernel's page cache).  Within this cache, I implemented partial indexes 
 using Log-Structured Merge Trees (LSM trees), a data structure well-suited for handling frequent writes.
 
-
 I took a look at using NVMe attached storage as a cache, to save costs compared to always hitting S3, and this opened
 me the world of linux syscalls like `ftruncate`, `writev`, `O_DIRECT` flags and many other nightmarish tools I needed
 to use if I wanted to store efficiently the cached data. At this point I was building partial indexes in the cache, using
@@ -101,7 +100,6 @@ for random access.  This model would allow me to leverage the extensive research
 but applied to persistent storage. In this model I could reuse the large academic literature about in memory wait
 free algorithms, imagining a collection...
 
-
 This is where I came up with the idea of making another large architectural jump: What if we dropped S3, and instead
 used NVMe without a filesystem, treating it as the RAM in a very large distributed machine. After all NVMe disks are 
 0-indexed arrays of 4 kb cells of memory, which can be randomly accessed, exactly like RAM albeit with slower performance.
@@ -113,18 +111,15 @@ drives and the network. The [NVMe ZNS specification](https://nvmexpress.org/spec
 approach, providing a rich API to maximize NVMe performance. For asynchronous I/O operations, I turned to 
 the [io_uring](https://github.com/axboe/liburing) Linux kernel interface.
 
-
 What I needed was a highly performant interface to handle highly concurrent operations on NVMe and network. In my help
 came the [NVMe ZNS specification](https://nvmexpress.org/specifications/), which provides a rich API to use NVMe storage
 to the best of its performance, and the [io_uring](https://github.com/axboe/liburing) linux kernel interface
-
 
 ~
 However, integrating `io_uring`, the NVMe ZNS API, and Golang proved incredibly challenging.  Golang's abstractions, 
 while generally beneficial, made it difficult to work with the low-level, memory-aligned operations required by 
 `io_uring` and NVMe.  This forced me to write significant amounts of unidiomatic Go code, sacrificing some of the 
 language's elegance and safety.
-
 
 The problem was that making `io_uring`, the NVMe API and golang work together nicely proved to be extremely
 difficult. I eventually made it several months later, but Golang forced me to write a lot of unidiomatic code, 
