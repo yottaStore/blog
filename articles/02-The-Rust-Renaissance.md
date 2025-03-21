@@ -10,9 +10,14 @@ NVME works!!!
 
 few operations, decouple compute, achieve multimodel
 
+
 # ReBaR Algorithm
 
 Practical rendezvous hashing
+
+# Quantiative pricing
+
+
 
 # The second redesign in Rust
 

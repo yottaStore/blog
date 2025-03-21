@@ -75,10 +75,8 @@ paper – which I had come to deeply appreciate – fueled my desire for somethi
 
 To address Node.js's limitations, I switched to Golang for its performance and concurrency features.  My goal was 
 still to build a system closer to the original Dynamo paper's principles. For this iteration, I experimented with 
-using Amazon S3 as the underlying storage layer.  This provided greater flexibility, but S3's cost, particularly for 
-operations like storing partial indexes to accelerate searches, became a concern.
+using Amazon S3 as the underlying storage layer: this provided faster iteration speed, but S3's cost became a concern.
 
-~
 To reduce S3 costs, I explored using locally attached NVMe drives as a cache. This, however, plunged me into the 
 complexities of direct storage management. To interact directly with the NVMe hardware and bypass the operating 
 system's file system overhead, I had to use low-level Linux system calls like `ftruncate` (for resizing files), 
@@ -86,12 +84,6 @@ system's file system overhead, I had to use low-level Linux system calls like `f
 (for bypassing the kernel's page cache).  Within this cache, I implemented partial indexes 
 using Log-Structured Merge Trees (LSM trees), a data structure well-suited for handling frequent writes.
 
-I took a look at using NVMe attached storage as a cache, to save costs compared to always hitting S3, and this opened
-me the world of linux syscalls like `ftruncate`, `writev`, `O_DIRECT` flags and many other nightmarish tools I needed
-to use if I wanted to store efficiently the cached data. At this point I was building partial indexes in the cache, using
-LSM trees to efficiently handle updates.
-
-~
 This led to a radical rethinking of the architecture: What if we eliminated S3 entirely and relied solely on NVMe 
 drives?  The cost and complexity of managing the S3/NVMe interaction were becoming significant. My idea was to treat 
 the NVMe drives as a form of persistent, byte-addressable memory, similar to RAM but with different performance 
@@ -100,29 +92,14 @@ for random access.  This model would allow me to leverage the extensive research
 but applied to persistent storage. In this model I could reuse the large academic literature about in memory wait
 free algorithms, imagining a collection...
 
-This is where I came up with the idea of making another large architectural jump: What if we dropped S3, and instead
-used NVMe without a filesystem, treating it as the RAM in a very large distributed machine. After all NVMe disks are 
-0-indexed arrays of 4 kb cells of memory, which can be randomly accessed, exactly like RAM albeit with slower performance.
-In this model I could reuse the large academic literature about in memory wait free algorithms, imagining a collection...
-
-~
 To realize this vision, I needed a high-performance interface for managing concurrent operations on both the NVMe 
 drives and the network. The [NVMe ZNS specification](https://nvmexpress.org/specifications/) offered a promising 
 approach, providing a rich API to maximize NVMe performance. For asynchronous I/O operations, I turned to 
 the [io_uring](https://github.com/axboe/liburing) Linux kernel interface.
 
-What I needed was a highly performant interface to handle highly concurrent operations on NVMe and network. In my help
-came the [NVMe ZNS specification](https://nvmexpress.org/specifications/), which provides a rich API to use NVMe storage
-to the best of its performance, and the [io_uring](https://github.com/axboe/liburing) linux kernel interface
-
-~
 However, integrating `io_uring`, the NVMe ZNS API, and Golang proved incredibly challenging.  Golang's abstractions, 
 while generally beneficial, made it difficult to work with the low-level, memory-aligned operations required by 
 `io_uring` and NVMe.  This forced me to write significant amounts of unidiomatic Go code, sacrificing some of the 
-language's elegance and safety.
-
-The problem was that making `io_uring`, the NVMe API and golang work together nicely proved to be extremely
-difficult. I eventually made it several months later, but Golang forced me to write a lot of unidiomatic code, 
-for example to handle memory aligned operations.
+language's elegance and ergonomics.
 
 And so, once again, I found myself at an impasse...
