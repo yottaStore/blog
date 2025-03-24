@@ -19,7 +19,7 @@ Practical rendezvous hashing
 
 # Quantiative pricing
 
-
+factor 200 saving compared to DynamoDB
 
 # The second redesign in Rust
 
